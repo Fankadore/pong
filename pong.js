@@ -1,7 +1,8 @@
 "use strict";
 
-const canvas = document.querySelector('#game-window');
+const canvas = document.querySelector('canvas');
 const ctx = canvas.getContext('2d');
+
 const WIDTH = 400;
 const HEIGHT = 300;
 
@@ -38,39 +39,10 @@ let pressingUp = false;
 let pressingDown = false;
 
 const FRAMERATE = 1000/60;
+let paused = true;
+let pauseMessage = 'PONG!';
 let score1 = 0;
 let score2 = 0;
-
-window.addEventListener('keydown', (e) => {
-    //console.log(e.keyCode);
-    if (e.keyCode === 87) {         // W
-        pressingW = true;
-    }
-    else if (e.keyCode === 83) {    // S
-        pressingS = true;
-    }
-    else if (e.keyCode === 38) {    // Up Arrow
-        pressingUp = true;
-    }
-    else if (e.keyCode === 40) {    // Down Arrow
-        pressingDown = true;
-    }
-});
-
-window.addEventListener('keyup', (e) => {
-    if (e.keyCode === 87) {         // W
-        pressingW = false;
-    }
-    else if (e.keyCode === 83) {    // S
-        pressingS = false;
-    }
-    else if (e.keyCode === 38) {    // Up Arrow
-        pressingUp = false;
-    }
-    else if (e.keyCode === 40) {    // Down Arrow
-        pressingDown = false;
-    }
-});
 
 function resetStage() {
     // Reset Ball
@@ -98,15 +70,46 @@ function resetStage() {
     paddle2Speed = paddle1Speed;
 }
 
+function resetGame() {
+    score1 = 0;
+    score2 = 0;
+    paused = true;
+}
+
 function draw() {
     ctx.clearRect(0, 0, WIDTH, HEIGHT);
-    ctx.fillRect(paddle1X, paddle1Y, paddleWidth, paddle1Height);
-    ctx.fillRect(paddle2X, paddle2Y, paddleWidth, paddle2Height);
-    ctx.fillRect(ballX, ballY, ballWidth, ballHeight);
-    ctx.fillText(`${score1} - ${score2}`, WIDTH / 2, 10); 
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    if (paused) {
+        if (!canvas.classList.contains("paused")) {
+            canvas.classList.add("paused");
+        }
+        ctx.font = '40px Arial';
+        ctx.fillText(pauseMessage, WIDTH / 2, (HEIGHT / 2) - 50);
+        ctx.font = '30px Arial';
+        ctx.fillText("Press Space to Start", WIDTH / 2, (HEIGHT / 2) + 10);
+        ctx.font = '18px Arial';
+        ctx.fillText("Pong by Ruaidhri MacKenzie", WIDTH / 2, (HEIGHT / 2) + 80);
+    }
+    else {
+        if (canvas.classList.contains("paused")) {
+            canvas.classList.remove("paused");
+        }
+        ctx.fillStyle = '#000000';
+        ctx.font = "30px Arial";
+        ctx.fillText(`${score1} - ${score2}`, WIDTH / 2, 30);
+        ctx.fillRect(paddle1X, paddle1Y, paddleWidth, paddle1Height);
+        ctx.fillRect(paddle2X, paddle2Y, paddleWidth, paddle2Height);
+        ctx.fillRect(ballX, ballY, ballWidth, ballHeight);
+    }
 }
 
 function update() {
+    if (paused) {
+        draw();
+        return;
+    }
+
     // Paddle 1
     if (pressingW) {
         paddle1Y -= paddle1Speed;
@@ -135,11 +138,6 @@ function update() {
         }
     }
 
-    // Check the ball always moves sideways
-    if (ballVelX === 0) {
-        ballVelX = 1;
-    }
-
     // Move the ball
     ballX += (ballVelX * ballSpeedX);
     ballY += (ballVelY * ballSpeedY);
@@ -157,31 +155,68 @@ function update() {
     // Bounce the ball against the paddles
     if (ballX + (ballWidth / 2) > paddle1X && ballX + (ballWidth / 2) < paddle1X + paddleWidth && ballY > paddle1Y && ballY < paddle1Y + paddle1Height) {
         ballVelX *= -1;
-        ballSpeedX += 0.1;
+        ballSpeedX += 0.25;
     }
     else if (ballX + (ballWidth / 2) > paddle2X && ballX + (ballWidth / 2) < paddle2X + paddleWidth && ballY > paddle2Y && ballY < paddle2Y + paddle2Height) {
         ballVelX *= -1;
-        ballSpeedX += 0.1;
+        ballSpeedX += 0.25;
     }
 
     // Player scores when the ball touchs the left or right edge
     if (ballX < 0) {
         score2++;
         if (score2 >= 3) {
-            // Player 2 Wins
+            pauseMessage = 'Player 2 wins!';
+            resetGame();
         }
         resetStage();
     }
     else if (ballX > WIDTH - ballWidth) {
         score1++;
         if (score1 >= 3) {
-            // Player 1 Wins
+            pauseMessage = 'Player 1 wins!';
+            resetGame();
         }
         resetStage();
     }
 
     draw();
 }
+
+
+window.addEventListener('keydown', (e) => {
+    //console.log(e.keyCode);
+    if (e.keyCode === 87) {         // W
+        pressingW = true;
+    }
+    else if (e.keyCode === 83) {    // S
+        pressingS = true;
+    }
+    else if (e.keyCode === 38) {    // Up Arrow
+        pressingUp = true;
+    }
+    else if (e.keyCode === 40) {    // Down Arrow
+        pressingDown = true;
+    } else if (e.keyCode === 32) {  // Space Bar
+        paused = !paused;
+        pauseMessage = 'Paused';
+    }
+});
+
+window.addEventListener('keyup', (e) => {
+    if (e.keyCode === 87) {         // W
+        pressingW = false;
+    }
+    else if (e.keyCode === 83) {    // S
+        pressingS = false;
+    }
+    else if (e.keyCode === 38) {    // Up Arrow
+        pressingUp = false;
+    }
+    else if (e.keyCode === 40) {    // Down Arrow
+        pressingDown = false;
+    }
+});
 
 canvas.setAttribute('width', WIDTH);
 canvas.setAttribute('height', HEIGHT);
